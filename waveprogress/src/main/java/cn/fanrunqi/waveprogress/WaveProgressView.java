@@ -18,7 +18,7 @@ import android.view.View;
 /**
  * Created by fanrunqi on 2016/7/6.
  */
-public class WaveProgressView extends View {
+public class WaveProgressView extends View implements Runnable {
     private int mWidth;
     private int mHeight;
 
@@ -42,23 +42,38 @@ public class WaveProgressView extends View {
     private float mCurY;
 
     private float mDistance = 0;
-    private int mRefreshGap = 10;
 
-    private boolean mAllowProgressInBothDirections = false;
+    private boolean mAllowProgressInBothDirections = true;
 
     private static final int INVALIDATE = 0X777;
-    private Handler handler = new Handler() {
+    private InvalidateHandler handler = new InvalidateHandler(this);
+
+    @Override
+    public void run() {
+        invalidate();
+    }
+
+    private static class InvalidateHandler extends Handler {
+        private Runnable runnable;
+        private int mRefreshGap = 10;
+
+        InvalidateHandler(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
                 case INVALIDATE:
-                    invalidate();
+                    runnable.run();
                     sendEmptyMessageDelayed(INVALIDATE, mRefreshGap);
                     break;
             }
+
+
         }
-    };
+    }
 
 
     public WaveProgressView(Context context) {
@@ -111,7 +126,7 @@ public class WaveProgressView extends View {
     private void Init() {
 
         if (null == getBackground()) {
-            throw new IllegalArgumentException(String.format("background is null."));
+            throw new IllegalArgumentException("background is null.");
         } else {
             mBackgroundBitmap = getBitmapFromDrawable(getBackground());
         }
